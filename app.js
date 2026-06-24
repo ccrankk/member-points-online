@@ -8,7 +8,7 @@ const defaultState = {
     minCarry: 200,
     studentDiscount: 0.05,
     discountPointMultiplier: 2,
-    teacherStudentRate: 0.05,
+    teacherStudentRate: 0.00,
     teacherPurchaseMultiplier: 1.5,
     tiers: [
       { name: "普通会员", threshold: 0, multiplier: 1 },
@@ -111,13 +111,13 @@ function transactionMetrics(transaction) {
   if (!member) return { discount: 0, paid: 0, multiplier: 1, customerPoints: 0, teacherPoints: 0 };
   const year = yearOf(transaction.date);
   const amount = Number(transaction.amount || 0);
-  const discount = member.type === "老师学生" ? amount * state.settings.studentDiscount : 0;    // 0.05
+  const discount = member.type === "老师学生" ? 0 : 0;    // amount * state.settings.studentDiscount
   const paid = amount;         //价格不打折
-  const discountPoints = discount * state.settings.basePoints * state.settings.discountPointMultiplier;   //0.05*0.04*2
+  const discountPoints = amount * state.settings.studentDiscount * state.settings.basePoints * state.settings.discountPointMultiplier;   //A * 0.05*0.04*2
   const multiplier = member.type === "老师本人"
     ? state.settings.teacherPurchaseMultiplier        //1.5
     : tierForSpend(annualSpend(member.id, year)).multiplier;
-  const customerPoints = Math.round(paid * (state.settings.basePoints * (1-discount) * multiplier + discountPoints));      // A*(0.04*0.95*1.5+0.05*0.04*2)
+  const customerPoints = Math.round(paid * state.settings.basePoints * (1-state.settings.studentDiscount) * multiplier + discountPoints);      // A*0.04*0.95*1.5+A*0.05*0.04*2
   const teacherPoints = member.type === "老师学生"
     ? Math.round(customerPoints * state.settings.teacherStudentRate)    //
     : 0;
