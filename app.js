@@ -117,9 +117,9 @@ function transactionMetrics(transaction) {
   const multiplier = member.type === "老师本人"
     ? state.settings.teacherPurchaseMultiplier        //1.5
     : tierForSpend(annualSpend(member.id, year)).multiplier;
-  const customerPoints = Math.round(paid * state.settings.basePoints * (1-state.settings.studentDiscount) * multiplier + discountPoints);      // A*0.04*0.95*1.0+A*0.05*0.04*2
+  const customerPoints = paid * state.settings.basePoints * (1-state.settings.studentDiscount) * multiplier + discountPoints;      // A*0.04*0.95*1.0+A*0.05*0.04*2
   const teacherPoints = member.type === "老师学生"
-    ? Math.round(customerPoints * state.settings.teacherStudentRate)    //
+    ? customerPoints * state.settings.teacherStudentRate    //
     : 0;
   return { discount, paid, discountPoints, multiplier, customerPoints, teacherPoints };
 }
