@@ -40,7 +40,7 @@ const defaultState = {
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const money = value => Number(value || 0).toLocaleString("zh-CN", {
-  minimumFractionDigits: 0,
+  minimumFractionDigits: 2,
   maximumFractionDigits: 2
 });
 const points = value => `${money(value)} 分`;
