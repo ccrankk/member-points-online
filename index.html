@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>店铺会员积分系统</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="cloud-loading">
+  <section class="auth-screen" id="authScreen">
+    <div class="auth-brand">
+      <div class="brand-mark">积</div>
+      <div><strong>会员积分系统</strong><span>在线协作版</span></div>
+    </div>
+    <div class="auth-panel" id="authPanel">
+      <p class="panel-kicker">Cloud Workspace</p>
+      <h1 id="authTitle">登录管理系统</h1>
+      <p class="auth-copy" id="authCopy">登录后，店铺成员将看到同一份会员、消费和积分数据。</p>
+      <form id="authForm" class="auth-form">
+        <label><span>邮箱</span><input name="email" type="email" autocomplete="email" required></label>
+        <label><span>密码</span><input name="password" type="password" autocomplete="current-password" minlength="6" required></label>
+        <button class="primary-button" type="submit" id="authSubmit">登录</button>
+      </form>
+      <button class="text-button auth-switch" id="authSwitch" type="button">还没有账号？注册</button>
+      <p class="auth-message" id="authMessage"></p>
+    </div>
+
+    <div class="auth-panel" id="workspacePanel" hidden>
+      <p class="panel-kicker">店铺空间</p>
+      <h1>创建或加入店铺</h1>
+      <p class="auth-copy">每个店铺拥有独立数据。创建后可把邀请码发给同事。</p>
+      <form id="createStoreForm" class="auth-form">
+        <label><span>店铺名称</span><input name="storeName" required placeholder="例如：XX美学门店"></label>
+        <button class="primary-button" type="submit">创建新店铺</button>
+      </form>
+      <div class="auth-divider"><span>或</span></div>
+      <form id="joinStoreForm" class="auth-form inline">
+        <label><span>店铺邀请码</span><input name="inviteCode" required maxlength="12" placeholder="输入邀请码"></label>
+        <button class="secondary-button" type="submit">加入店铺</button>
+      </form>
+      <button class="text-button auth-switch" id="signOutFromWorkspace" type="button">退出登录</button>
+      <p class="auth-message" id="workspaceMessage"></p>
+    </div>
+
+    <div class="auth-panel setup-panel" id="setupPanel" hidden>
+      <p class="panel-kicker">首次配置</p>
+      <h1>连接 Supabase</h1>
+      <p class="auth-copy">请先按照项目中的部署说明创建数据库，再将项目 URL 和 anon key 填入 <code>config.js</code>。</p>
+      <div class="setup-steps">
+        <span>1</span><p>在 Supabase SQL Editor 执行 <code>supabase-schema.sql</code></p>
+        <span>2</span><p>复制项目 URL 与 anon key</p>
+        <span>3</span><p>填写 <code>config.js</code> 后重新打开网页</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">积</div>
+        <div>
+          <strong>呱呱会员积分系统</strong>
+          <span>Store Points</span>
+        </div>
+      </div>
+
+      <nav class="nav-list" aria-label="主导航">
+        <button class="nav-item active" data-view="dashboard"><span class="nav-icon">⌂</span><span>经营总览</span></button>
+        <button class="nav-item" data-view="members"><span class="nav-icon">◎</span><span>会员管理</span></button>
+        <button class="nav-item" data-view="transactions"><span class="nav-icon">¥</span><span>消费流水</span></button>
+        <button class="nav-item" data-view="redemptions"><span class="nav-icon">◇</span><span>积分兑换</span></button>
+        <button class="nav-item" data-view="settlement"><span class="nav-icon">✓</span><span>年度结算</span></button>
+        <button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span><span>规则参数</span></button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="store-identity">
+          <strong id="storeName">在线店铺</strong>
+          <button id="copyInviteCode" type="button">邀请码 <span id="inviteCode">—</span></button>
+        </div>
+        <div class="storage-state">
+          <span class="status-dot"></span>
+          <span id="syncState">云端已同步</span>
+        </div>
+        <button class="secondary-button compact" id="exportData">导出数据</button>
+        <label class="secondary-button compact file-button">
+          导入数据
+          <input id="importData" type="file" accept=".json">
+        </label>
+        <button class="secondary-button compact" id="signOutButton">退出登录</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-button menu-button" id="menuButton" aria-label="打开菜单">☰</button>
+        <div>
+          <p class="eyebrow" id="pageEyebrow">积分运营工作台</p>
+          <h1 id="pageTitle">经营总览</h1>
+        </div>
+        <div class="top-actions">
+          <label class="year-control">
+            <span>核算年度</span>
+            <select id="yearSelect"></select>
+          </label>
+          <button class="primary-button" data-open-modal="transaction">＋ 记一笔消费</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <section class="view active" id="view-dashboard">
+          <div class="kpi-grid" id="kpiGrid"></div>
+
+          <div class="dashboard-grid">
+            <section class="panel chart-panel">
+              <div class="panel-header">
+                <div>
+                  <p class="panel-kicker">会员结构</p>
+                  <h2>等级分布与年度贡献</h2>
+                </div>
+                <span class="muted" id="chartCaption"></span>
+              </div>
+              <div class="tier-chart" id="tierChart"></div>
+            </section>
+
+            <section class="panel quick-panel">
+              <div class="panel-header">
+                <div>
+                  <p class="panel-kicker">快捷操作</p>
+                  <h2>今天要处理什么</h2>
+                </div>
+              </div>
+              <div class="quick-actions">
+                <button data-open-modal="member"><span>＋</span><div><strong>新增会员</strong><small>建立客户或师生关系</small></div></button>
+                <button data-open-modal="transaction"><span>¥</span><div><strong>登记消费</strong><small>自动计算折扣与积分</small></div></button>
+                <button data-open-modal="redemption"><span>◇</span><div><strong>积分兑换</strong><small>扣减积分并进入结算</small></div></button>
+                <button data-view-jump="settlement"><span>✓</span><div><strong>年度结算</strong><small>查看保留与失效积分</small></div></button>
+              </div>
+            </section>
+          </div>
+
+          <div class="dashboard-grid lower">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="panel-kicker">最新动态</p>
+                  <h2>最近消费流水</h2>
+                </div>
+                <button class="text-button" data-view-jump="transactions">查看全部 →</button>
+              </div>
+              <div class="activity-list" id="recentActivity"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <p class="panel-kicker">规则运行</p>
+                  <h2>当前积分规则</h2>
+                </div>
+                <button class="text-button" data-view-jump="settings">调整规则 →</button>
+              </div>
+              <div class="rule-summary" id="ruleSummary"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-members">
+          <div class="toolbar">
+            <div class="search-box">
+              <span>⌕</span>
+              <input id="memberSearch" type="search" placeholder="搜索编号、姓名或老师编号">
+            </div>
+            <select id="memberTypeFilter">
+              <option value="">全部体系</option>
+              <option>普通客户</option>
+              <option>老师本人</option>
+              <option>老师学生</option>
+            </select>
+            <button class="primary-button" data-open-modal="member">＋ 新增会员</button>
+          </div>
+          <section class="table-panel">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>会员</th><th>会员体系</th><th>当前等级</th><th>关联老师</th><th>本年消费</th><th>本年积分</th><th>可用积分</th><th>操作</th></tr></thead>
+                <tbody id="memberTableBody"></tbody>
+              </table>
+            </div>
+            <div class="empty-state" id="memberEmpty">没有找到符合条件的会员</div>
+          </section>
+        </section>
+
+        <section class="view" id="view-transactions">
+          <div class="toolbar">
+            <div class="search-box">
+              <span>⌕</span>
+              <input id="transactionSearch" type="search" placeholder="搜索交易号、会员姓名或编号">
+            </div>
+            <select id="transactionTypeFilter">
+              <option value="">全部体系</option>
+              <option>普通客户</option>
+              <option>老师本人</option>
+              <option>老师学生</option>
+            </select>
+            <button class="primary-button" data-open-modal="transaction">＋ 记一笔消费</button>
+          </div>
+          <section class="table-panel">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>日期 / 交易号</th><th>会员</th><th>体系</th><th>原价</th><th>折扣</th><th>实付</th><th>倍率</th><th>客户积分</th><th>老师积分</th><th>操作</th></tr></thead>
+                <tbody id="transactionTableBody"></tbody>
+              </table>
+            </div>
+            <div class="empty-state" id="transactionEmpty">该年度暂无消费流水</div>
+          </section>
+        </section>
+
+        <section class="view" id="view-redemptions">
+          <div class="toolbar">
+            <div class="search-box">
+              <span>⌕</span>
+              <input id="redemptionSearch" type="search" placeholder="搜索兑换单号、会员姓名或编号">
+            </div>
+            <div class="toolbar-spacer"></div>
+            <button class="primary-button" data-open-modal="redemption">＋ 新增兑换</button>
+          </div>
+          <section class="table-panel">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>日期 / 兑换单号</th><th>会员</th><th>兑换类型</th><th>兑换积分</th><th>兑换前可用</th><th>兑换后余额</th><th>备注</th><th>操作</th></tr></thead>
+                <tbody id="redemptionTableBody"></tbody>
+              </table>
+            </div>
+            <div class="empty-state" id="redemptionEmpty">该年度暂无兑换记录</div>
+          </section>
+        </section>
+
+        <section class="view" id="view-settlement">
+          <div class="settlement-banner">
+            <div>
+              <p class="panel-kicker">年度核算</p>
+              <h2><span id="settlementYear"></span> 年积分结算预览</h2>
+              <p>兑换后余额低于保留门槛的积分将带入下一年，其余未结算积分自动失效。</p>
+            </div>
+            <button class="secondary-button" id="downloadSettlement">导出结算 CSV</button>
+          </div>
+          <div class="settlement-stats" id="settlementStats"></div>
+          <section class="table-panel">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>会员</th><th>体系</th><th>期初等级</th><th>年度消费</th><th>年度积分</th><th>已兑换</th><th>兑换后余额</th><th>可保留</th><th>将失效</th><th>下一年等级</th></tr></thead>
+                <tbody id="settlementTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="view-settings">
+          <form id="settingsForm">
+            <div class="settings-layout">
+              <section class="panel settings-panel">
+                <div class="panel-header">
+                  <div>
+                    <p class="panel-kicker">通用参数</p>
+                    <h2>积分与结算规则</h2>
+                  </div>
+                </div>
+                <div class="form-grid two">
+                  <label><span>每消费 1 元基础积分</span><input name="basePoints" type="number" min="0" step="0.1"></label>
+                  <label><span>核算窗口天数</span><input name="settlementDays" type="number" min="1"></label>
+                  <label><span>兑换后最低保留积分</span><input name="minCarry" type="number" min="0"></label>
+                  <label><span>老师本人购买积分倍率</span><input name="teacherPurchaseMultiplier" type="number" min="0" step="0.1"></label>
+                  <label><span>老师学生折扣率</span><div class="input-suffix"><input name="studentDiscount" type="number" min="0" max="100" step="0.1"><span>%</span></div></label>
+                  <label><span>折扣转积分倍数</span><input name="discountPointMultiplier" type="number" min="0" step="0.1"></label>
+                  <label><span>学生给老师积分比例</span><div class="input-suffix"><input name="teacherStudentRate" type="number" min="0" max="100" step="0.1"><span>%</span></div></label>
+                </div>
+              </section>
+
+              <section class="panel settings-panel">
+                <div class="panel-header">
+                  <div>
+                    <p class="panel-kicker">会员等级</p>
+                    <h2>门槛与积分倍率</h2>
+                  </div>
+                </div>
+                <div class="tier-settings" id="tierSettings"></div>
+              </section>
+            </div>
+            <div class="settings-footer">
+              <p>修改后会立即重算所有年度数据。</p>
+              <button class="primary-button" type="submit">保存规则</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <div><p class="panel-kicker" id="modalKicker">信息录入</p><h2 id="modalTitle"></h2></div>
+        <button class="icon-button" id="closeModal" aria-label="关闭">×</button>
+      </div>
+      <form id="modalForm">
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-footer">
+          <button class="secondary-button" type="button" id="cancelModal">取消</button>
+          <button class="primary-button" type="submit">保存</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="cloud.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
