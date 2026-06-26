@@ -109,21 +109,55 @@ function nextTier(member, year = state.selectedYear) {
   return Number(year) <= Number(member.protectionUntil || 0) ? initial : achieved;
 }
 
+function calcuhelp(paid){
+  const tiers = state.settings.tiers;
+  const stage4 = paid-tiers[3].threshold > 0 ? paid-tiers[3].threshold : 0;
+  const stage3 = (stage4 == 0) ? paid-tiers[2].threshold : tiers[3].threshold-tiers[2].threshold;
+  const stage2 = (stage3 <= 0) ? paid-tiers[1].threshold : tiers[2].threshold-tiers[1].threshold;
+  const stage1 = (stage2 <= 0) ? paid-tiers[0].threshold : tiers[1].threshold-tiers[0].threshold;
+  const stage = {stage1,stage2,stage3,stage4}
+  return stage
+}
+
 function transactionMetrics(transaction) {
   const member = memberById(transaction.memberId);
-  if (!member) return { discount: 0, paid: 0, multiplier: 1, customerPoints: 0, teacherPoints: 0 };
+  if (!member) return { discount: 0, paid: 0, multiplier: 1, customerPoints: 0, teacherPoints: 0, studentPoints: 0 };
   const year = yearOf(transaction.date);
   const amount = Number(transaction.amount || 0);
   const discount = member.type === "老师学生" ? 0 : 0;    // amount * state.settings.studentDiscount
   const paid = amount;         //价格不打折
-  const discountPoints = paid * state.settings.studentDiscount * state.settings.basePoints * state.settings.discountPointMultiplier;   //A * 0.05*0.04*2
+  // const discountPoints = paid * state.settings.studentDiscount * state.settings.basePoints * state.settings.discountPointMultiplier;   //A * 0.05*0.04*2
   const multiplier = member.type === "老师本人"
     ? state.settings.teacherPurchaseMultiplier        //1.5
     : tierForSpend(annualSpend(member.id, year)).multiplier;
-  const customerPoints = paid * state.settings.basePoints * (1-state.settings.studentDiscount) * multiplier + discountPoints;      // A*0.04*0.95*1.0+A*0.05*0.04*2
+  const tiers = state.settings.tiers;
+  const customerPoints = 0.0;
+  const discountPoints = 0.0;
+  const stage = calcuhelp(paid);
+  for (const i=0; i<4; i++){
+    customerPoints += stage[i] * state.settings.basePoints * tiers[i].multiplier;
+    discountPoints += stage[i] * state.settings.basePoints * 2;
+  }
+  
+  if (paid > tiers[1].threshold && paid <= tiers[2].threshold){
+    customerPoints += (tiers[1].threshold + (paid-tiers[1].threshold) * tiers[1].multiplier) * state.settings.basePoints;
+  }else if (paid > tiers[2].threshold && paid <= tiers[3].threshold){
+    customerPoints += (tiers[1].threshold + (tiers[2].threshold - tiers[1].threshold) * tiers[1].multiplier + (paid-tiers[2].threshold) * tiers[2].multiplier) * state.settings.basePoints;
+  }else if (paid > tiers[3].threshold){
+    customerPoints += (tiers[1].threshold + (tiers[2].threshold - tiers[1].threshold) * tiers[1].multiplier + (tiers[3].threshold - tiers[2].threshold) * tiers[2].multiplier (paid-tiers[3].threshold) * tiers[3].multiplier) * state.settings.basePoints;
+  }else{
+    customerPoints += paid * state.settings.basePoints * tiers[0].multiplier;
+  }
+
+  const studentPoints = member.type === "老师学生" 
+    ? customerPoints * (1 - state.settings.studentDiscount) + discountPoints * state.settings.studentDiscount      
+    : 0;   
   const teacherPoints = member.type === "老师学生"
-    ? customerPoints * state.settings.teacherStudentRate    //
+    ? studentPoints * state.settings.teacherStudentRate    //
     : 0;
+  customerPoints = member.type === "老师学生"
+    ? studentPoints
+    : customerPoints;
   return { discount, paid, discountPoints, multiplier, customerPoints, teacherPoints };
 }
 
