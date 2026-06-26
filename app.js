@@ -146,9 +146,10 @@ function redeemedPoints(memberId, year = state.selectedYear) {
 
 function settlementFor(member, year = state.selectedYear) {
   const earned = customerPoints(member.id, year) + (member.type === "老师本人" ? teacherContribution(member.id, year) : 0);
-  const redeemed = redeemedPoints(member.id, year);
-  const balance = Math.max(0, earned - redeemed);
-  const carry = redeemed > 0 && balance < state.settings.minCarry ? balance : 0;
+  const redeemed = redeemedPoints(member.id, year);           //积分结算
+  const balance = Math.max(0, earned - redeemed);             //结算后积分
+  // const carry = redeemed > 0 && balance < state.settings.minCarry ? balance : 0;  
+  const carry = Math.min(balance, state.settings.minCarry);
   const expired = Math.max(0, balance - carry);
   return {
     member,
