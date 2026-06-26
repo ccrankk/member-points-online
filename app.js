@@ -115,8 +115,8 @@ function calcuhelp(paid){
   const stage3 = (stage4 == 0) ? paid-tiers[2].threshold : tiers[3].threshold-tiers[2].threshold;
   const stage2 = (stage3 <= 0) ? paid-tiers[1].threshold : tiers[2].threshold-tiers[1].threshold;
   const stage1 = (stage2 <= 0) ? paid-tiers[0].threshold : tiers[1].threshold-tiers[0].threshold;
-  const stage = {stage1,stage2,stage3,stage4}
-  return stage
+  const stage = [Math.max(0,stage1),Math.max(0,stage2),Math.max(0,stage3),Math.max(0,stage4)];
+  return stage;
 }
 
 function transactionMetrics(transaction) {
@@ -131,23 +131,13 @@ function transactionMetrics(transaction) {
     ? state.settings.teacherPurchaseMultiplier        //1.5
     : tierForSpend(annualSpend(member.id, year)).multiplier;
   const tiers = state.settings.tiers;
-  const customerPoints = 0.0;
-  const discountPoints = 0.0;
+  let customerPoints = 0.0;
+  let discountPoints = 0.0;
   const stage = calcuhelp(paid);
-  for (const i=0; i<4; i++){
+  for (let i=0; i<4; i++){
     customerPoints += stage[i] * state.settings.basePoints * tiers[i].multiplier;
     discountPoints += stage[i] * state.settings.basePoints * 2;
   }
-  
-  // if (paid > tiers[1].threshold && paid <= tiers[2].threshold){
-  //   customerPoints += (tiers[1].threshold + (paid-tiers[1].threshold) * tiers[1].multiplier) * state.settings.basePoints;
-  // }else if (paid > tiers[2].threshold && paid <= tiers[3].threshold){
-  //   customerPoints += (tiers[1].threshold + (tiers[2].threshold - tiers[1].threshold) * tiers[1].multiplier + (paid-tiers[2].threshold) * tiers[2].multiplier) * state.settings.basePoints;
-  // }else if (paid > tiers[3].threshold){
-  //   customerPoints += (tiers[1].threshold + (tiers[2].threshold - tiers[1].threshold) * tiers[1].multiplier + (tiers[3].threshold - tiers[2].threshold) * tiers[2].multiplier (paid-tiers[3].threshold) * tiers[3].multiplier) * state.settings.basePoints;
-  // }else{
-  //   customerPoints += paid * state.settings.basePoints * tiers[0].multiplier;
-  // }
 
   const studentPoints = member.type === "老师学生" 
     ? customerPoints * (1 - state.settings.studentDiscount) + discountPoints * state.settings.studentDiscount      
@@ -155,8 +145,12 @@ function transactionMetrics(transaction) {
   const teacherPoints = member.type === "老师学生"
     ? studentPoints * state.settings.teacherStudentRate    //
     : 0;
+  
   customerPoints = member.type === "老师学生"
     ? studentPoints
+    : customerPoints;
+  customerPoints = member.type === "老师本人"
+    ? paid * state.settings.basePoints * multiplier
     : customerPoints;
   return { discount, paid, discountPoints, multiplier, customerPoints, teacherPoints };
 }
