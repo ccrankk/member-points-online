@@ -268,7 +268,7 @@ function renderDashboard() {
     ["老师本人", `购买积分 ${s.teacherPurchaseMultiplier} 倍`],
     ["老师学生", `${s.studentDiscount * 100}% 折扣额转 ${s.discountPointMultiplier} 倍积分`],
     ["老师贡献", `学生积分的 ${s.teacherStudentRate * 100}%`],
-    ["年终保留", `兑换后不足 ${money(s.minCarry)} 分保留`]
+    ["年终保留", `兑换后至多 ${money(s.minCarry)} 分保留`]
   ].map(([label, value]) => `<div class="rule-row"><span>${label}</span><strong>${value}</strong></div>`).join("");
 }
 
