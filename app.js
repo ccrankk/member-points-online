@@ -139,15 +139,15 @@ function transactionMetrics(transaction) {
     discountPoints += stage[i] * state.settings.basePoints * 2;
   }
   
-  if (paid > tiers[1].threshold && paid <= tiers[2].threshold){
-    customerPoints += (tiers[1].threshold + (paid-tiers[1].threshold) * tiers[1].multiplier) * state.settings.basePoints;
-  }else if (paid > tiers[2].threshold && paid <= tiers[3].threshold){
-    customerPoints += (tiers[1].threshold + (tiers[2].threshold - tiers[1].threshold) * tiers[1].multiplier + (paid-tiers[2].threshold) * tiers[2].multiplier) * state.settings.basePoints;
-  }else if (paid > tiers[3].threshold){
-    customerPoints += (tiers[1].threshold + (tiers[2].threshold - tiers[1].threshold) * tiers[1].multiplier + (tiers[3].threshold - tiers[2].threshold) * tiers[2].multiplier (paid-tiers[3].threshold) * tiers[3].multiplier) * state.settings.basePoints;
-  }else{
-    customerPoints += paid * state.settings.basePoints * tiers[0].multiplier;
-  }
+  // if (paid > tiers[1].threshold && paid <= tiers[2].threshold){
+  //   customerPoints += (tiers[1].threshold + (paid-tiers[1].threshold) * tiers[1].multiplier) * state.settings.basePoints;
+  // }else if (paid > tiers[2].threshold && paid <= tiers[3].threshold){
+  //   customerPoints += (tiers[1].threshold + (tiers[2].threshold - tiers[1].threshold) * tiers[1].multiplier + (paid-tiers[2].threshold) * tiers[2].multiplier) * state.settings.basePoints;
+  // }else if (paid > tiers[3].threshold){
+  //   customerPoints += (tiers[1].threshold + (tiers[2].threshold - tiers[1].threshold) * tiers[1].multiplier + (tiers[3].threshold - tiers[2].threshold) * tiers[2].multiplier (paid-tiers[3].threshold) * tiers[3].multiplier) * state.settings.basePoints;
+  // }else{
+  //   customerPoints += paid * state.settings.basePoints * tiers[0].multiplier;
+  // }
 
   const studentPoints = member.type === "老师学生" 
     ? customerPoints * (1 - state.settings.studentDiscount) + discountPoints * state.settings.studentDiscount      
